@@ -6,14 +6,23 @@ from pathlib import Path
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.uic import loadUi
 
+BASEDIR = os.path.dirname(__file__)
+
+try:
+    from ctypes import windll  # Only exists on Windows.
+    APP_ID = 'Foundry.Katana.Launcher.1'
+    windll.shell32.SetCurrentProcessExplicitAppUserModelID(APP_ID)
+except ImportError:
+    pass
+
 class KatanaLauncher(QtWidgets.QMainWindow):
     """class representing the main launcher UI"""
     def __init__(self):
         super(KatanaLauncher, self).__init__()
-        loadUi('assets\\KatanaLauncher.ui', self)
-        self.setWindowIcon(QtGui.QIcon('assets\\Katana.ico'))
+        loadUi(os.path.join(BASEDIR,'assets\\KatanaLauncher.ui'), self)
+        self.setWindowIcon(QtGui.QIcon(os.path.join(BASEDIR, 'assets\\Katana.ico')))
         self.config = configparser.ConfigParser()
-        self.config.read('config.ini')
+        self.config.read(os.path.join(BASEDIR,'config.ini'))
         self.populate()
         self.refresh_BTN.clicked.connect(self.populate)
         self.renderer_CB.currentTextChanged.connect(self.renderer_changed)
@@ -70,9 +79,9 @@ class KatanaLauncher(QtWidgets.QMainWindow):
         katana_path = self.config.get('Katana', "Path")
         katana_versions = [file[6:] for file in os.listdir(katana_path)
                            if os.path.isfile(katana_path + '\\'  + file + '\\bin\\katanaBin.exe')]
-        renderers = [file[0:-4] for file in os.listdir('scripts\\Renderers')
+        renderers = [file[0:-4] for file in os.listdir((os.path.join(BASEDIR,'scripts\\Renderers')))
                      if file.endswith('.bat')]
-        scripts = [file[0:-4] for file in os.listdir('scripts')
+        scripts = [file[0:-4] for file in os.listdir((os.path.join(BASEDIR,'scripts')))
                      if file.endswith('.bat')]
         #get scripts
         for script in scripts:
@@ -90,7 +99,7 @@ class KatanaLauncher(QtWidgets.QMainWindow):
         katana_version = self.katana_version_CB.currentText()
         os.environ['KATANA_VERSION'] = katana_version
         os.environ['KATANA_LINE'] = katana_version[:3]
-        os.environ['KATANA_ROOT'] = self.config.get('Katana', "Path") + '\\Katana' + katana_version 
+        os.environ['KATANA_ROOT'] = self.config.get('Katana', "Path") + '\\Katana' + katana_version
         os.environ['RENVER'] = self.renderer_version_CB.currentText()
         renderer = self.renderer_CB.currentText()
         optional_scripts = (
@@ -98,13 +107,13 @@ class KatanaLauncher(QtWidgets.QMainWindow):
             if self.scripts_layout.itemAt(i).widget().isChecked())
         cmd = ''
         for script in optional_scripts:
-            cmd += Path('scripts\\' + script.text() + '.bat').read_text(encoding="utf-8")
-        cmd += Path('scripts\\Renderers\\' + renderer + '.bat').read_text(encoding="utf-8")
+            cmd += Path(os.path.join(BASEDIR,'scripts\\' + script.text() + '.bat')).read_text(encoding="utf-8")
+        cmd += Path(os.path.join(BASEDIR,'scripts\\Renderers\\' + renderer + '.bat')).read_text(encoding="utf-8")
         cmd += "\n\"%KATANA_ROOT%\\bin\\katanaBin.exe\""
         # Temp bat file deletes itself when Katana closes
         cmd += "\ngoto 2>nul & del \"%~f0\""
         # Create temporary file with all commands
-        with open("temp.bat", "w", encoding="utf-8") as f:
+        with open(os.path.join(BASEDIR,"temp.bat"), "w", encoding="utf-8") as f:
             f.write(cmd)
 
         os.system("start cmd /c temp.bat")
@@ -115,7 +124,7 @@ class KatanaLauncher(QtWidgets.QMainWindow):
             self.scripts_layout.itemAt(i).widget() for i in range(self.scripts_layout.count()-1)
              if self.scripts_layout.itemAt(i).widget().isChecked())
         for script in optional_scripts:
-            subprocess.Popen("notepad.exe scripts/" + script.text() + '.bat')
+            subprocess.Popen("notepad.exe" + (os.path.join(BASEDIR, "scripts/" + script.text() + '.bat')))
 
 
     def open_settings(self):
