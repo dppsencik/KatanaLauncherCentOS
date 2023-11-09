@@ -147,7 +147,7 @@ class KatanaLauncher(QtWidgets.QMainWindow):
         with open("temp.sh", "w") as f:
             f.write(cmd)
 
-        os.system('gnome-terminal --window -- bash -c \"bash -i temp.sh\"')
+        os.system('gnome-terminal --window -- bash -c \"bash -i temp.sh;bash\"')
 
     def edit_scripts(self):
         """Open a notepad of user selected scripts to be edited"""
